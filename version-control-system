@@ -1,0 +1,295 @@
+import java.io.File
+import java.lang.Exception
+import java.security.MessageDigest
+
+fun main(args: Array<String>) {
+    /** Command that we read and check if args is empty */
+    if (args.isEmpty()) {
+        infoBase()
+    } else {
+        readCommand(args)
+    }
+}
+
+const val config = "config"
+const val add = "add"
+const val log = "log"
+const val commit = "commit"
+const val checkout = "checkout"
+
+/** Map with info */
+val commandsMap = mutableMapOf(
+    config to "Get and set a username.",
+    add to "Add a file to the index.",
+    log to "Show commit logs.",
+    commit to "Save changes.",
+    checkout to "Restore a file."
+)
+
+fun infoBase() {
+    println("These are SVCS commands:")
+    for (i in commandsMap) {
+        /** Print each element of Map in new line with adding space between key and value */
+        println(i.key + (" ".repeat(11 - i.key.length)) + i.value)
+    }
+}
+/** Main checker of input args */
+fun readCommand(cmd: Array<String>) {
+    try {
+        cmd.toString().replace("\"","").split(" ")
+        /** Check if args < 2 index only */
+        if (cmd.size < 2) {
+            when (cmd[0]) {
+                config -> {
+                    fileProgram(cmd)
+                }
+                add -> {
+                    fileProgram(cmd)
+                }
+                log -> {
+                    fileProgram(cmd)
+                }
+                commit -> {
+                    println("Message was not passed.")
+                }
+                checkout -> {
+                    println("Commit id was not passed.")
+                }
+                "--help" -> {
+                    infoBase()
+                }
+                else -> {
+                    println("'${cmd[0]}' is not a SVCS command.")
+                }
+            }
+            /** Check if args > 2 index */
+        } else {
+            when (cmd[0]) {
+                config -> {
+                    fileProgram(cmd, cmd[1])
+                }
+                add -> {
+                    fileProgram(cmd, cmd[1])
+                }
+                log -> {
+                    fileProgram(cmd)
+                }
+                /** here we added cmd and[1] because fun file program works on 2 parameters: a & b, so here b means it that input has only one word */
+                commit -> {
+                    fileProgram(cmd, cmd[1])
+                }
+                checkout -> {
+                    fileProgram(cmd, cmd[1])
+                }
+                "--help" -> {
+                    infoBase()
+                }
+                else -> {
+                    println("'${cmd[0]}' is not a SVCS command.")
+                }
+            }
+        }
+        /** Check exception to be safety =) */
+    } catch (e: Exception) {
+        //println("Try pass text again")
+        println(e.message)
+    }
+}
+
+/** Here we are creating all folders and directions */
+fun fileProgram(a: Array<String>, b: String = "") {
+
+    /** Creating vcs if it exists */
+    val vcs = File("vcs")
+    if (!vcs.exists()) {
+        vcs.mkdir()
+    }
+
+    /** Creating directory COMMITS if it exists */
+    val commits = vcs.resolve("commits")
+    if (!commits.exists()) {
+        commits.mkdir()
+    }
+
+    /** Creating config File if it exists */
+    val config = vcs.resolve("config.txt")
+    val startConfigFile = "Please, tell me who you are."
+    if (!config.exists()) {
+        config.createNewFile()
+        config.writeText(startConfigFile)
+    }
+    val readConfigFile = config.readText()
+
+    /** Creating index File if it exists */
+    val index = vcs.resolve("index.txt")
+    val startIndexFile = "Add a file to the index."
+    if (!index.exists()) {
+        index.createNewFile()
+        index.writeText(startIndexFile)
+    }
+    val readIndexFile = index.readText()
+
+    /** Creating log File if it exists */
+    val log = vcs.resolve("log.txt")
+    val startLogFile = "No commits yet."
+    if (!log.exists()) {
+        log.createNewFile()
+        log.writeText(startLogFile)
+    }
+    val readLogFile = log.readText()
+
+
+
+    /** Check if received args a != empty & b != empty */
+    if (a[0].isNotEmpty() && b.isNotEmpty()) {
+        when (a[0]) {
+            /** Rewrite config if it has more 2 indexes */
+            "config" -> {
+                config.writeText(b)
+                println("The username is ${config.readText()}.")
+            }
+            /** Check if file not exists in ALL direction */
+            "add" -> {
+                if (!File(b).exists()) {
+                    println("Can't find '$b'.")
+                }
+                else if (b in index.readLines()) {
+                    println("The file name is already exists.")
+                }
+                else {
+                    if (startIndexFile == readIndexFile) {
+                        index.writeText("Tracked files:")
+                    }
+                    index.appendText("\n$b")
+                    println("The file '${b}' is tracked.")
+                }
+            }
+            "commit" -> {
+                /** This is temporary file help us for printing info as newest in logs.txt
+                 * So we copy for some times in it and after getting info about new commit we append old text to the new commit */
+                val tempTextFile = commits.resolve("temp_text.txt")
+                tempTextFile.createNewFile()
+
+                /** Input without first() object */
+                var writer = emptyArray<String>()
+                for (i in 1..a.lastIndex) {
+                    writer += a[i]
+                }
+
+                if (startIndexFile != readIndexFile && startConfigFile != readConfigFile) {
+                    /** Creating hash key by info into the tracking files.
+                     * 1) Write hash-keys of each file from index.txt into mutable array
+                     */
+                    val baseFileHashes = mutableListOf<String>()
+                    for (i in 1 until index.readLines().size) {
+                        baseFileHashes += hash(File(index.readLines()[i]).readText())
+                    }
+                    /** Making a main hash key: Naming if directory in commits */
+                    val temporaryHash = hash(baseFileHashes.joinToString())
+                    /** Say hash-key directory name */
+                    val directoryCreatedByHashKeyInCommits = commits.resolve(temporaryHash)
+                    /** Created by hash-key directory, space for copy file from input (root) by name, in created directory */
+
+                    fun reWritingFileLogIndex() {
+                        /** copy file to temporary Text file */
+                        log.copyTo(tempTextFile, true)
+                        /** Write hash - key */
+                        log.writeText("$commit $temporaryHash\n")
+                        /** Add to log Author from config */
+                        log.appendText("Author: ${readConfigFile}\n")
+                        /** Add input text to log */
+                        log.appendText(writer.joinToString().replace(",",""))
+                        /** Write text from temporary file back into the log */
+                        log.appendText("\n\n${tempTextFile.readText()}")
+                        println("Changes are committed.")
+                    }
+
+                    fun firstWritingFileLogIndex() {
+                        log.writeText("$commit $temporaryHash\n")
+                        log.appendText("Author: ${readConfigFile}\n")
+                        log.appendText(writer.joinToString().replace(",",""))
+                        println("Changes are committed.")
+                    }
+
+                    /** If directory hash-key is exists, we will create new directory by hash of File contents */
+                    if (!directoryCreatedByHashKeyInCommits.exists()) {
+                        directoryCreatedByHashKeyInCommits.mkdir()
+                        /** Copy tracking files in commits/hash-key (directory) */
+                        for (i in 1 until index.readLines().size) {
+                            val insideDirectoryOfHashKey = directoryCreatedByHashKeyInCommits.resolve(index.readLines()[i])
+                            File(index.readLines()[i]).copyTo(insideDirectoryOfHashKey)
+                        }
+
+                        /** If log.txt is empty */
+                        if (startLogFile == readLogFile) {
+                            firstWritingFileLogIndex()
+                        }
+                        /** If log.txt is not empty */
+                        else if (startLogFile != readLogFile) {
+                            reWritingFileLogIndex()
+                        }
+                    } else {
+                        println("Nothing to commit.")
+                    }
+                } else {
+                    println("Nothing to commit.")
+                }
+            }
+            "checkout" -> {
+                if (commits.resolve(b).exists()) {
+                    val checkNamingDirectoryInsideCommit = commits.resolve(b)
+                    /** Take names of tracking files from index.txt by loop */
+                    for (i in 1 until index.readLines().size) {
+                        /** Directory where these files locating */
+                        val trackingFileCommitted = checkNamingDirectoryInsideCommit.resolve(index.readLines()[i])
+                        /** Rewrite main tracking files */
+                        trackingFileCommitted.copyTo(File(index.readLines()[i]), overwrite = true)
+                    }
+                    println("Switched to commit $b.")
+                }
+                else {
+                    println("Commit does not exist.")
+                }
+            }
+        }
+    }
+    /** Check if received args a != empty BUT b == empty */
+    else if (a[0].isNotEmpty() && b.isEmpty()) {
+        when (a[0]) {
+            "config" -> {
+                if (startConfigFile == readConfigFile) {
+                    println(startConfigFile)
+                } else {
+                    println("The username is $readConfigFile.")
+                }
+            }
+            "add" -> {
+                if (startIndexFile == readIndexFile) {
+                    println(startIndexFile)
+                } else {
+                    println(index.readText())
+                }
+            }
+            "log" -> {
+                if (startLogFile == readLogFile) {
+                    println(startLogFile)
+                } else {
+                    println(log.readText())
+                }
+            }
+            "checkout" -> {
+                println("Commit id was not passed.")
+            }
+        }
+    }
+}
+
+/** Генератор Sha-256 хэш - кода */
+fun hash(a: String): String {
+    val bytes = a.toByteArray()
+    /** Класс MessageDigest - Криптографическая хеш-функция, которая может вычислять дайджест сообщения из двоичных данных. */
+    val md = MessageDigest.getInstance("SHA-256")
+    val digest = md.digest(bytes)
+    /** %02x используется для преобразования одного символа в шестнадцатеричную строку */
+    return digest.fold("") { str, it -> str + "%02x".format(it) }
+}
