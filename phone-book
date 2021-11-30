@@ -1,0 +1,194 @@
+import java.io.File
+import kotlin.math.sqrt
+
+fun main() {
+    val directory = File("C:/Users/gorde/IdeaProjects/test1/directory.txt").readLines()
+    val findName = File("C:/Users/gorde/IdeaProjects/test1/find.txt").readLines()
+    linearSearch(directory, findName)
+    sortAndJumpSearch(directory, findName)
+    quickSortAndBinarySearch(directory, findName)
+    hashTable(directory, findName)
+}
+
+fun linearSearch(directory: List<String>, findName: List<String>) {
+    println("Start searching (linear search)...")
+
+    val start = System.currentTimeMillis()
+    var found = 0
+    for (name in findName) {
+        if (linearSearch(name, directory)) {
+            found++
+        }
+    }
+    val end = System.currentTimeMillis()
+
+    println("Found $found / 500 entries. Time taken: ${timeTaken(end - start)}")
+    println()
+}
+
+fun linearSearch(name: String, list: List<String>): Boolean {
+    for (entry in list) {
+        if (entry.substringAfter(" ") == name) {
+            return true
+        }
+    }
+    return false
+}
+
+fun sortAndJumpSearch(directory: List<String>, findName: List<String>) {
+    println("Start searching (bubble sort + jump search)...")
+
+    val startTime = System.currentTimeMillis()
+    val sortedDirectory = bubbleSort(directory)
+    val endSort = System.currentTimeMillis()
+
+    val startSearch = System.currentTimeMillis()
+    var found = 0
+    for (name in findName) {
+        if (jumpSearch(name, sortedDirectory)) {
+            found++
+        }
+    }
+    val endTime = System.currentTimeMillis()
+
+    println("Found $found / 500 entries. Time taken: ${timeTaken(endTime - startTime)}")
+    println("Sorting time: ${timeTaken(endSort - startTime)}")
+    println("Searching time:: ${timeTaken(endTime - startSearch)}")
+    println()
+}
+
+fun quickSortAndBinarySearch(directory: List<String>, findName: List<String>) {
+    println("Start searching (quick sort + binary search)...")
+
+    val startTime = System.currentTimeMillis()
+    val mutDirectory = directory.toMutableList()
+    quicksort(mutDirectory)
+
+    val endSortTime = System.currentTimeMillis()
+
+    var found = 0
+    for (name in findName) {
+        if (binarySearch(name, mutDirectory)) {
+            found++
+        }
+    }
+    val endTime = System.currentTimeMillis()
+
+    println("Found $found / 500 entries. Time taken: ${timeTaken(endTime - startTime)}")
+    println("Sorting time: ${timeTaken(endSortTime - startTime)}")
+    println("Searching time:: ${timeTaken(endTime - endSortTime)}")
+    println()
+}
+
+fun jumpSearch(name: String, list: List<String>): Boolean {
+    val intervalLength = sqrt(list.size.toDouble()).toInt()
+    for (index in 0..list.size step intervalLength) {
+        val entry = list[index]
+        return if (entry.substringAfter(" ") == name) {
+            true
+        } else if (entry.substringAfter(" ") < name) {
+            /** Jump to next LINE */
+            continue
+        } else {
+            /** If jumped too far and start a linear search back into previous interval */
+            var i = index
+            while (list[i].substringAfter(" ") > name && i >= 0) {
+                i--
+            }
+            true
+        }
+    }
+    return false
+}
+
+fun binarySearch(name: String, list: List<String>): Boolean {
+    if (list.isEmpty()) {
+        return false
+    } else if (list.size == 1) {
+        return list[0].substringAfter(" ") == name
+    }
+    /** Middle num in array */
+    val middle = list.size / 2
+    return if (list[middle].substringAfter(" ") == name) {
+        true
+    } else if (list[middle].substringAfter(" ") < name) {
+        /** Look in right half */
+        binarySearch(name, list.subList(middle + 1, list.size))
+    } else {
+        /** Look in left half */
+        binarySearch(name, list.subList(0, middle))
+    }
+}
+
+fun bubbleSort(list: List<String>): List<String> {
+    return list.sortedBy { it.substringAfter(" ") }
+}
+
+fun partition(list: MutableList<String>, _start: Int, _end: Int): Int {
+    var start = _start
+    var end = _end
+
+    while (start < end) {
+        while (start < end) {
+            if (list[start].substringAfter(" ") > list[end].substringAfter(" ")) {
+                val swap = list[start]
+                list[start] = list[end]
+                list[end] = swap
+                break
+            }
+            end -= 1
+        }
+        while (start < end) {
+            if (list[start].substringAfter(" ") > list[end].substringAfter(" ")) {
+                val swap = list[start]
+                list[start] = list[end]
+                list[end] = swap
+                break
+            }
+            start += 1
+        }
+    }
+    return start
+}
+
+fun quicksort(list: MutableList<String>, _start: Int = -1, _end: Int = -1) {
+    var start = _start
+    var end = _end
+
+    if (start == -1) start = 0
+    if (end == -1) end = list.size
+
+    if (start < end) {
+        val i = partition(list, start, end - 1)
+        quicksort(list, start, i)
+        quicksort(list, i + 1, end)
+    }
+}
+
+fun timeTaken(duration: Long): String {
+    return String.format("%1\$tM min. %1\$tS sec. %1\$tL ms.", duration)
+}
+
+fun hashTable(directory: List<String>, findName: List<String>) {
+    println("Start searching (hash table)...")
+
+    val startTime = System.currentTimeMillis()
+    val map: HashMap<String, String> = HashMap()
+    for (entry in directory) {
+        map[entry.substringAfter(" ")] = entry.substringBefore(" ")
+    }
+    val endSortingTime = System.currentTimeMillis()
+
+    var found = 0
+    for (i in findName) {
+        if (map.containsKey(i)) {
+            found++
+        }
+    }
+
+    val endTime = System.currentTimeMillis()
+
+    println("Found $found / 500 entries. Time taken: ${timeTaken(endTime - startTime)}")
+    println("Creating time: ${timeTaken(endSortingTime - startTime)}")
+    println("Searching time:: ${timeTaken(endTime - endSortingTime)}")
+}
