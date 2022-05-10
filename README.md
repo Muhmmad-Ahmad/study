@@ -1,9 +1,11 @@
 #Kotlin
 
-1. Easy console bot
+1. Easy console bot (JetBrains Academy) lvl "EASY"
 
-2. Program for Cinema
+2. Program for Cinema (JetBrains Academy) lvl "EASY"
 
-3. Version Control System
+3. Version Control System (JetBrains Academy) lvl "MEDIUM"
 
-4. Phone Book
+4. Phone Book (JetBrains Academy) lvl "HARD" (Graduate projects)
+
+5. Parking lot (JetBrains Academy) lvl "HARD" (Graduate projects)
