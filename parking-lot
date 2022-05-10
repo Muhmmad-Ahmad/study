@@ -1,0 +1,182 @@
+private var parkBase: MutableMap<Int, List<String>>? = null
+
+fun main() = menu()
+
+/** Main input menu method */
+fun menu() {
+    val inputCommand = readLine()!!.split(" ").toList()
+    when {
+        parkBase != null -> when {
+            // park the car
+            inputCommand[0] == "park" -> ParkManager().parkCar(inputCommand)
+
+            // check status
+            inputCommand[0] == "status" -> ParkManager().status()
+
+            // filter by color - registration number of cars
+            inputCommand[0] == "reg_by_color" -> ParkManager().filterRegNumByColor(inputCommand)
+
+            // filter by color - park places of cars
+            inputCommand[0] == "spot_by_color" -> ParkManager().filterParkPlacesByColor(inputCommand)
+
+            // found by registration number - car
+            inputCommand[0] == "spot_by_reg" -> ParkManager().foundPlaceNumByRegNum(inputCommand)
+
+            // leave the car
+            inputCommand[0] == "leave" -> ParkManager().leaveCar(inputCommand)
+        }
+
+        parkBase == null && inputCommand[0] == "park"
+                || inputCommand[0] == "status" || inputCommand[0] == "leave"
+                || inputCommand[0] == "reg_by_color" || inputCommand[0] == "spot_by_color"
+                || inputCommand[0] == "spot_by_reg" -> {
+            println("Sorry, a parking lot has not been created.")
+            menu()
+        }
+
+        // create parking places
+        inputCommand[0] == "create" -> ParkManager().createParkingPlaces(inputCommand)
+        // exit program
+        inputCommand[0] == "exit" -> return
+    }
+}
+
+/** Parking manager object */
+class ParkManager {
+
+    /** Park car into the parking */
+    fun parkCar(input: List<String>) {
+        var checkStatus = false
+        loop@ for (it in parkBase!!) {
+            if (it.value.isEmpty()) {
+                parkBase!![it.key] = input
+                println("${input[2]} car parked in spot ${it.key}.")
+                checkStatus = true
+                break@loop
+            }
+        }
+
+        if (!checkStatus) {
+            println("Sorry, the parking lot is full.")
+        }
+        menu()
+    }
+
+    /** Leave car from parking */
+    fun leaveCar(input: List<String>) {
+        var checkStatus = false
+        try {
+            loop@ for (it in parkBase!!) {
+                if (it.key == input[1].toInt()) {
+                    println("Spot ${input[1].toInt()} is free.")
+                    parkBase!!.put(it.key, emptyList())
+                    checkStatus = true
+                    break@loop
+                }
+            }
+
+            if (!checkStatus) {
+                println("There is no car in spot ${input[1].toInt()}.")
+            }
+        } catch (e: IndexOutOfBoundsException) {
+            println("Wrong")
+        }
+        menu()
+    }
+
+    /** Create parking places */
+    fun createParkingPlaces(input: List<String>) {
+        parkBase = mutableMapOf()
+        if (input[1].toInt() > 0) {
+            parkBase!!.clear()
+            for (i in 1..input[1].toInt()) {
+                parkBase!!.put(i, emptyList())
+            }
+            println("Created a parking lot with ${input[1].toInt()} spots.")
+        } else {
+            println("The number of spots should be positive: ${input[1].toInt()}")
+            menu()
+        }
+        menu()
+    }
+
+    /** Check status of parking places */
+    fun status() {
+        var checkStatus = false
+
+        parkBase!!.forEach { (mKey, mValue) ->
+            if (mValue.isNotEmpty()) {
+                println("$mKey ${mValue[1]} ${mValue[2]}")
+                checkStatus = true
+            }
+        }
+
+        if (!checkStatus) {
+            println("Parking lot is empty.")
+        }
+        menu()
+    }
+
+    /** Filter parking by color, output registration numbers of cars */
+    fun filterRegNumByColor(input: List<String>) {
+        var checkStatus = false
+        val tempListNums = mutableListOf<String>()
+
+        parkBase!!.forEach { (_, mValue) ->
+            if (mValue.isNotEmpty()) {
+                if (mValue[2].equals(input[1], ignoreCase = true)) {
+                    tempListNums.add(mValue[1])
+                    checkStatus = true
+                }
+            }
+        }
+
+        if (!checkStatus) {
+            println("No cars with color ${input[1]} were found.")
+        } else if (tempListNums.isNotEmpty()) {
+            println(tempListNums.joinToString())
+        }
+        menu()
+    }
+
+    /** Filter parking by color, output registration numbers of cars */
+    fun filterParkPlacesByColor(input: List<String>) {
+        var checkStatus = false
+        val tempListPlaces = mutableListOf<Int>()
+
+        parkBase!!.forEach { (mKey, mValue) ->
+            if (mValue.isNotEmpty()) {
+                if (mValue[2].equals(input[1], ignoreCase = true)) {
+                    tempListPlaces.add(mKey)
+                    checkStatus = true
+                }
+            }
+        }
+
+        if (!checkStatus) {
+            println("No cars with color ${input[1]} were found.")
+        } else if (tempListPlaces.isNotEmpty()) {
+            println(tempListPlaces.joinToString())
+        }
+        menu()
+    }
+
+    /** Filter parking by registration number of the car, output number of place into the parking */
+    fun foundPlaceNumByRegNum(input: List<String>) {
+        var checkStatus = false
+
+        parkBase!!.forEach { (mKey, mValue) ->
+            if (mValue.isNotEmpty()) {
+                if (mValue[1].equals(input[1], ignoreCase = false)) {
+                    println(mKey)
+                    checkStatus = true
+                }
+            }
+        }
+
+        if (!checkStatus) {
+            println("No cars with registration number ${input[1]} were found.")
+        }
+        menu()
+    }
+}
