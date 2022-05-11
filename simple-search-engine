@@ -1,0 +1,163 @@
+import java.io.File
+
+private val dataBase = mutableListOf<List<String>>()
+private var dataBaseMap = mapOf<String, List<Int>>()
+
+fun main(args: Array<String>) {
+    when (args[0]) {
+        "--data" -> {
+            val inputFile = File(args[1])
+
+            /** Main database */
+            inputFile.forEachLine {
+                dataBase.add(it.split(" ").toList())
+            }
+
+            /** Map for Inverted Index */
+            dataBaseMap = inputFile.useLines { lines ->
+                // if in is not empty
+                lines.filter { it.isNotBlank() }
+                    // single list of all elements
+                    .flatMapIndexed { index, value ->
+                        // split value
+                        value.splitToSequence(" ")
+                            // if value is not empty
+                            .filter { it.isNotBlank() }
+                            // make a map of each value index
+                            .map { index to it }
+                        // group elements name - list indexes
+                    }.groupBy({ (_, name) -> name }, { (index, _) -> index })
+            }
+            println(dataBaseMap)
+        }
+        else -> println("Wrong input data command")
+    }
+    menu()
+}
+
+/** Menu method */
+fun menu() {
+    println("=== Menu ===")
+    println("1. Search information.")
+    println("2. Print all data.")
+    println("0. Exit.")
+
+    when (readLine()!!.toInt()) {
+        1 -> {
+            println("Select a matching strategy: ALL, ANY, NONE")
+            FilterManager(readLine()!!.toString())
+        }
+        2 -> {
+            if (dataBase.isNotEmpty()) {
+                dataBase.forEach {
+                    println(it.joinToString().replace(",", "").trim())
+                }
+            } else {
+                println("Incorrect option! Try again.")
+            }
+            menu()
+        }
+        0 -> {
+            println("Bye!")
+            return
+        }
+        else -> {
+            println("Incorrect option! Try again.")
+            menu()
+        }
+    }
+}
+
+/** Words data filter class manager */
+class FilterManager(private val strategy: String) {
+
+    init {
+        println("Enter data to search people:")
+        val request = readLine()!!.split(" ").toList()
+        when (this.strategy) {
+            "ALL" -> allFilter(request)
+            "ANY" -> anyFilter(request)
+            "NONE" -> noneFilter(request)
+        }
+    }
+
+    /** ALL METHOD */
+    private fun allFilter(request: List<String>) {
+        val tempData = mutableListOf<String>()
+
+        dataBaseMap.forEach { list ->
+            if (list.key.contains(request[0], ignoreCase = true)) {
+                if (dataBase[list.value.first()].contains(request[1]) && !tempData.contains(
+                        dataBase[list.value.first()].joinToString().replace(",", "").trim()
+                    )
+                )
+                    tempData.add(dataBase[list.value.first()].joinToString().replace(",", "").trim())
+            }
+        }
+
+        if (tempData.isNotEmpty()) {
+            println("${tempData.size} person found:")
+            tempData.forEach {
+                println(it)
+            }
+        } else {
+            println("No matching people found.")
+        }
+        menu()
+    }
+
+    /** ANY METHOD */
+    private fun anyFilter(request: List<String>) {
+        val tempData = mutableListOf<String>()
+
+        dataBaseMap.forEach { list ->
+            request.forEach {
+                if (list.key.contains(it, ignoreCase = true)) {
+                    list.value.forEach { index ->
+                        if (!tempData.contains(dataBase[index].joinToString().replace(",", "").trim())) {
+                            tempData.add(dataBase[index].joinToString().replace(",", "").trim())
+                        }
+                    }
+                }
+            }
+        }
+
+        if (tempData.isNotEmpty()) {
+            println("${tempData.size} person found:")
+            tempData.forEach {
+                println(it)
+            }
+        } else {
+            println("No matching people found.")
+        }
+        menu()
+    }
+
+    /** NONE METHOD */
+    private fun noneFilter(request: List<String>) {
+        val tempData = mutableListOf<List<String>>()
+        tempData += dataBase
+
+        for (requestString in request) {
+            dataBaseMap.forEach { list ->
+                if (requestString.contains(list.key, ignoreCase = true)) {
+                    list.value.forEach { index ->
+                        if (dataBase[index] in tempData) {
+                            tempData.remove(dataBase[index])
+                        }
+                    }
+                }
+            }
+        }
+
+        if (tempData.isNotEmpty()) {
+            println("${tempData.size} person found:")
+            tempData.forEach {
+                println(it.joinToString().replace(",", ""))
+            }
+        } else {
+            println("No matching people found.")
+        }
+        menu()
+    }
+}
