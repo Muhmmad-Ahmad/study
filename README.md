@@ -6,9 +6,12 @@
 
 3. Version Control System: (JetBrains Academy) lvl "MEDIUM"
 
-4. Phone Book: (JetBrains Academy) lvl "HARD" (Graduate projects)
+4. Coffee Machine: (JetBrains Academy) lvl "MEDIUM"
 
-5. Parking lot: (JetBrains Academy) lvl "HARD" (Graduate projects)
+5. Phone Book: (JetBrains Academy) lvl "HARD" (Graduate projects)
 
-6. Simple Search Engine: (JetBrains Academy) lvl "CHALLENGING"
+6. Parking lot: (JetBrains Academy) lvl "HARD" (Graduate projects)
+
+7. Simple Search Engine: (JetBrains Academy) lvl "CHALLENGING"
+
 
