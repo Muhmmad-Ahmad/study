@@ -1,0 +1,149 @@
+fun main() = coffeeMachineMenu()
+
+/** Current amount of resources into Machine */
+object CurrentMachineResources {
+    var WATER = 400
+    var MILK = 540
+    var BEANS = 120
+    var EMPTY_CUPS = 9
+}
+
+/** Temporary parameters of Machine */
+object ResourcesParameters {
+    var WATER = 0
+    var MILK = 0
+    var BEANS = 0
+}
+
+/** Cash Register of Machine */
+object CashRegister {
+    var CASH = 550
+}
+
+/** Coffee Machine Menu */
+fun coffeeMachineMenu() {
+    println("Write action (buy, fill, take, remaining, exit):")
+    when (readLine()!!.toString()) {
+        "buy" -> {
+            println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:")
+            CoffeeMachineCounter(readLine()!!.toString())
+        }
+        "fill" -> addResources()
+        "take" -> cashManager()
+        "remaining" -> coffeeMachineStatistics()
+        "exit" -> return
+    }
+}
+
+/** Coffee Machine Show Resources Statistic */
+fun coffeeMachineStatistics() {
+    println(
+        "The coffee machine has:\n" +
+                "${CurrentMachineResources.WATER} ml of water\n" +
+                "${CurrentMachineResources.MILK} ml of milk\n" +
+                "${CurrentMachineResources.BEANS} g of coffee beans\n" +
+                "${CurrentMachineResources.EMPTY_CUPS} disposable cups\n" +
+                "\$${CashRegister.CASH} of money\n"
+    )
+    coffeeMachineMenu()
+}
+
+/** Add resources to Coffee Machine */
+fun addResources() {
+    println("Write how many ml of water do you want to add:")
+    CurrentMachineResources.WATER += readLine()!!.toInt()
+
+    println("Write how many ml of milk do you want to add:")
+    CurrentMachineResources.MILK += readLine()!!.toInt()
+
+    println("Write how many grams of coffee beans do you want to add:")
+    CurrentMachineResources.BEANS += readLine()!!.toInt()
+
+    println("Write how many disposable cups of coffee do you want to add:")
+    CurrentMachineResources.EMPTY_CUPS += readLine()!!.toInt()
+
+    coffeeMachineMenu()
+}
+
+/** Add resources to Coffee Machine */
+fun cashManager() {
+    println("I gave you \$${CashRegister.CASH}\n")
+    CashRegister.CASH = 0
+    coffeeMachineMenu()
+}
+
+/** Class which is count each coffee cup and return Boolean result */
+class CoffeeMachineCounter(private val typeOfCoffee: String) {
+    var coffeeCupsMachineMade = false
+
+    init {
+        when (this.typeOfCoffee) {
+            "1" -> {
+                ResourcesParameters.WATER = 250
+                ResourcesParameters.BEANS = 16
+                coffeeWithOutMilk()
+                if (coffeeCupsMachineMade) CashRegister.CASH += 4
+            }
+            "2" -> {
+                ResourcesParameters.WATER = 350
+                ResourcesParameters.MILK = 75
+                ResourcesParameters.BEANS = 20
+                coffeeWithMilk()
+                if (coffeeCupsMachineMade) CashRegister.CASH += 7
+            }
+            "3" -> {
+                ResourcesParameters.WATER = 200
+                ResourcesParameters.MILK = 100
+                ResourcesParameters.BEANS = 12
+                coffeeWithMilk()
+                if (coffeeCupsMachineMade) CashRegister.CASH += 6
+            }
+            "back" -> coffeeMachineMenu()
+        }
+
+        if (coffeeCupsMachineMade) {
+            println("I have enough resources, making you a coffee!\n")
+            coffeeMachineMenu()
+        }
+    }
+
+    private fun coffeeWithOutMilk() {
+        if ((CurrentMachineResources.WATER - ResourcesParameters.WATER) < 0) {
+            println("Sorry, not enough water!\n")
+            coffeeMachineMenu()
+        } else if ((CurrentMachineResources.BEANS - ResourcesParameters.BEANS) < 0) {
+            println("Sorry, not enough beans!\n")
+            coffeeMachineMenu()
+        } else if (CurrentMachineResources.EMPTY_CUPS <= 0) {
+            println("Sorry, not enough cups!\n")
+            coffeeMachineMenu()
+        } else if ((CurrentMachineResources.WATER - ResourcesParameters.WATER) >= 0 && (CurrentMachineResources.BEANS - ResourcesParameters.BEANS) >= 0 && CurrentMachineResources.EMPTY_CUPS > 0) {
+            CurrentMachineResources.WATER = CurrentMachineResources.WATER - ResourcesParameters.WATER
+            CurrentMachineResources.BEANS = CurrentMachineResources.BEANS - ResourcesParameters.BEANS
+            CurrentMachineResources.EMPTY_CUPS = CurrentMachineResources.EMPTY_CUPS - 1
+            this.coffeeCupsMachineMade = true
+        }
+    }
+
+    private fun coffeeWithMilk() {
+        if ((CurrentMachineResources.WATER - ResourcesParameters.WATER) < 0) {
+            println("Sorry, not enough water!\n")
+            coffeeMachineMenu()
+        } else if ((CurrentMachineResources.BEANS - ResourcesParameters.BEANS) < 0) {
+            println("Sorry, not enough beans!\n")
+            coffeeMachineMenu()
+        } else if ((CurrentMachineResources.MILK - ResourcesParameters.MILK) < 0) {
+            println("Sorry, not enough milk!\n")
+            coffeeMachineMenu()
+        } else if (CurrentMachineResources.EMPTY_CUPS <= 0) {
+            println("Sorry, not enough cups!\n")
+            coffeeMachineMenu()
+        } else if ((CurrentMachineResources.WATER - ResourcesParameters.WATER) >= 0 && (CurrentMachineResources.MILK - ResourcesParameters.MILK) >= 0 && (CurrentMachineResources.BEANS - ResourcesParameters.BEANS) >= 0 && CurrentMachineResources.EMPTY_CUPS > 0) {
+            CurrentMachineResources.WATER = CurrentMachineResources.WATER - ResourcesParameters.WATER
+            CurrentMachineResources.MILK = CurrentMachineResources.MILK - ResourcesParameters.MILK
+            CurrentMachineResources.BEANS = CurrentMachineResources.BEANS - ResourcesParameters.BEANS
+            CurrentMachineResources.EMPTY_CUPS = CurrentMachineResources.EMPTY_CUPS - 1
+            this.coffeeCupsMachineMade = true
+        }
+    }
+}
