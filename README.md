@@ -8,10 +8,12 @@
 
 4. Coffee Machine: (JetBrains Academy) lvl "MEDIUM"
 
-5. Phone Book: (JetBrains Academy) lvl "HARD" (Graduate projects)
+5. Watermark: (JetBrains Academy) lvl "HARD"
 
-6. Parking lot: (JetBrains Academy) lvl "HARD" (Graduate projects)
+6. Phone Book: (JetBrains Academy) lvl "HARD" (Graduate projects)
 
-7. Simple Search Engine: (JetBrains Academy) lvl "CHALLENGING"
+7. Parking lot: (JetBrains Academy) lvl "HARD" (Graduate projects)
+
+8. Simple Search Engine: (JetBrains Academy) lvl "CHALLENGING"
 
 
