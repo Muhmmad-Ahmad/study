@@ -1,0 +1,230 @@
+package watermark
+
+import java.awt.Color
+import java.awt.image.BufferedImage
+import java.io.File
+import java.lang.Exception
+import javax.imageio.IIOException
+import javax.imageio.ImageIO
+import kotlin.system.exitProcess
+
+/** Temporary variables which I can use any way */
+object TemporaryImages {
+    lateinit var readMainImage: BufferedImage
+    lateinit var readWaterMarkImage: BufferedImage
+    var outPutImageName = ""
+    var waterMarkTransparency = 0
+    var alphaChannel = false
+    var setRed = 0
+    var setGreen = 0
+    var setBlue = 0
+    var tColor = false
+    var waterImagePosition1 = 0
+    var waterImagePosition2 = 0
+    var DiffX = 0
+    var DiffY = 0
+    var waterMarkGrid = ""
+}
+
+/** Start fun with input file name */
+fun main() {
+    ImageInfo()
+}
+
+/** Object which is read image file and print result */
+class ImageInfo {
+
+    init {
+        mainImageFile()
+    }
+
+    /** MainImage method */
+    private fun mainImageFile() {
+        println("Input the image filename:")
+        val inputFileName = readLine()!!.toString()
+        try {
+            val imageFile = File(inputFileName)
+            if (imageFile.exists()) {
+                TemporaryImages.readMainImage = ImageIO.read(imageFile)
+                if (TemporaryImages.readMainImage.colorModel.numComponents != 3) {
+                    println("The number of image color components isn't 3.")
+                    exitProcess(0)
+                } else if (TemporaryImages.readMainImage.colorModel.pixelSize != 24 && TemporaryImages.readMainImage.colorModel.pixelSize != 32) {
+                    println("The image isn't 24 or 32-bit.")
+                    exitProcess(0)
+                } else {
+                    waterMarkImageFile()
+                }
+            } else {
+                println("The file $imageFile doesn't exist.")
+            }
+        } catch (e: IIOException) {
+            println("The file $inputFileName doesn't exist.")
+        }
+    }
+
+    /** Watermark method */
+    private fun waterMarkImageFile() {
+        println("Input the watermark image filename:")
+        val inputFileName = readLine()!!.toString()
+        try {
+            val imageWaterMarkFile = File(inputFileName)
+            if (imageWaterMarkFile.exists()) {
+                TemporaryImages.readWaterMarkImage = ImageIO.read(imageWaterMarkFile)
+                if (TemporaryImages.readWaterMarkImage.transparency == 3) {
+                    println("Do you want to use the watermark's Alpha channel?")
+                    val transparencyType = readLine()!!.toString()
+                    when {
+                        transparencyType.contains("yes", ignoreCase = true) -> {
+                            TemporaryImages.alphaChannel = true
+                            checkTransparency()
+                        }
+                        else -> checkTransparency()
+                    }
+                } else if (TemporaryImages.readWaterMarkImage.colorModel.numComponents != 3) {
+                    println("The number of watermark color components isn't 3.")
+                    exitProcess(0)
+                } else if (TemporaryImages.readWaterMarkImage.colorModel.pixelSize != 24 && TemporaryImages.readMainImage.colorModel.pixelSize != 32) {
+                    println("The watermark isn't 24 or 32-bit.")
+                    exitProcess(0)
+                } else if (TemporaryImages.readWaterMarkImage.width > TemporaryImages.readMainImage.width || TemporaryImages.readWaterMarkImage.height > TemporaryImages.readMainImage.height) {
+                    println("The watermark's dimensions are larger.")
+                    exitProcess(0)
+                } else {
+                    println("Do you want to set a transparency color?")
+                    val transparencyQuestion = readLine()!!.toString().trim()
+                    if (transparencyQuestion.equals("yes", ignoreCase = true)) {
+                        println("Input a transparency color ([Red] [Green] [Blue]):")
+                        val transparencyColor = readLine()!!.toString().split(" ").toList()
+                        if (transparencyColor.size == 3 && transparencyColor[0].toInt() in 0..255 && transparencyColor[1].toInt() in 0..255 && transparencyColor[2].toInt() in 0..255) {
+                            TemporaryImages.setRed = transparencyColor[0].toInt()
+                            TemporaryImages.setGreen = transparencyColor[1].toInt()
+                            TemporaryImages.setBlue = transparencyColor[2].toInt()
+                            TemporaryImages.tColor = true
+                            checkTransparency()
+                        } else {
+                            println("The transparency color input is invalid.")
+                            exitProcess(0)
+                        }
+                    } else {
+                        checkTransparency()
+                    }
+                }
+            } else {
+                println("The file $imageWaterMarkFile doesn't exist.")
+            }
+        } catch (e: IIOException) {
+            println("The file $inputFileName doesn't exist.")
+        }
+    }
+
+    /** Check input from console Int of Transparency */
+    private fun checkTransparency() {
+        println("Input the watermark transparency percentage (Integer 0-100):")
+        try {
+            when (val num = readLine()!!.toInt()) {
+                !in 0..100 -> println("The transparency percentage is out of range.")
+                else -> {
+                    TemporaryImages.waterMarkTransparency = num.toString().trim().toInt()
+                    setGrid()
+                }
+            }
+        } catch (e: NumberFormatException) {
+            println("The transparency percentage isn't an integer number.")
+            exitProcess(0)
+        }
+    }
+
+    /** Set grid for watermark */
+    private fun setGrid() {
+        println("Choose the position method (single, grid):")
+        val inputGrid = readLine()!!.toString()
+        if (inputGrid.equals("single", ignoreCase = true)) {
+            TemporaryImages.DiffX = TemporaryImages.readMainImage.width - TemporaryImages.readWaterMarkImage.width
+            TemporaryImages.DiffY = TemporaryImages.readMainImage.height - TemporaryImages.readWaterMarkImage.height
+            println("Input the watermark position ([x 0-${TemporaryImages.DiffX}] [y 0-${TemporaryImages.DiffY}]):")
+            val wPosition = readLine()!!.toString().split(" ").toList()
+            try {
+                if (wPosition[0].toInt() in 0..TemporaryImages.DiffX && wPosition[1].toInt() in 0..TemporaryImages.DiffY && wPosition.size == 2) {
+                    TemporaryImages.waterImagePosition1 = wPosition[0].toInt()
+                    TemporaryImages.waterImagePosition2 = wPosition[1].toInt()
+                    TemporaryImages.waterMarkGrid = "single"
+                    setImageName()
+                } else {
+                    println("The position input is out of range.")
+                    exitProcess(0)
+                }
+            } catch (e: Exception) {
+                println("The position input is invalid.")
+                exitProcess(0)
+            }
+        } else if (inputGrid.equals("grid", ignoreCase = true)) {
+            TemporaryImages.waterMarkGrid = "grid"
+            setImageName()
+        } else {
+            println("The position method input is invalid.")
+            exitProcess(0)
+        }
+    }
+
+    /** Set Image name "output_file.png" */
+    private fun setImageName() {
+        println("Input the output image filename (jpg or png extension):")
+        val inputNameOfImage = readLine()!!.toString().split(".").toList()
+        when {
+            inputNameOfImage.size > 1 && inputNameOfImage[1] == "png" || inputNameOfImage[1] == "jpg" -> {
+                TemporaryImages.outPutImageName = inputNameOfImage.joinToString().replace(",", ".").replace(" ", "")
+                createImageWithWaterMark()
+            }
+            else -> println("The output file extension isn't \"jpg\" or \"png\".")
+        }
+    }
+
+    /** Create image with watermark */
+    private fun createImageWithWaterMark() {
+        val outputImage = BufferedImage(TemporaryImages.readMainImage.width, TemporaryImages.readMainImage.height, BufferedImage.TYPE_INT_RGB)
+
+        if (TemporaryImages.waterMarkGrid == "single") {
+            for (x in 0 until TemporaryImages.readMainImage.width) {
+                for (y in 0 until TemporaryImages.readMainImage.height) {
+                    val i = Color(TemporaryImages.readMainImage.getRGB(x ,y))
+                    val w = if ((x in TemporaryImages.waterImagePosition1 until TemporaryImages.waterImagePosition1 + TemporaryImages.readWaterMarkImage.width
+                                && y in TemporaryImages.waterImagePosition2 until TemporaryImages.waterImagePosition2 + TemporaryImages.readWaterMarkImage.height)) {
+                        Color(TemporaryImages.readWaterMarkImage.getRGB(x - TemporaryImages.waterImagePosition1 ,y - TemporaryImages.waterImagePosition2), TemporaryImages.alphaChannel)
+                    } else {
+                        Color(0, 0, 0, 0)
+                    }
+                    val outputColor = if (w.alpha == 0 || Color(TemporaryImages.setRed, TemporaryImages.setGreen, TemporaryImages.setBlue) == w) {
+                        Color(i.rgb)
+                    } else {
+                        setRgbColor(i, w)
+                    }
+                    outputImage.setRGB(x, y, outputColor.rgb)
+                }
+            }
+        } else {
+            for (x in 0 until TemporaryImages.readMainImage.width) {
+                for (y in 0 until TemporaryImages.readMainImage.height) {
+                    val i = Color(TemporaryImages.readMainImage.getRGB(x ,y))
+                    val w = Color(TemporaryImages.readWaterMarkImage.getRGB(x % TemporaryImages.readWaterMarkImage.width, y % TemporaryImages.readWaterMarkImage.height), TemporaryImages.alphaChannel)
+                    val outputColor = if (w.alpha == 0 || Color(TemporaryImages.setRed, TemporaryImages.setGreen, TemporaryImages.setBlue) == w) {
+                        Color(i.rgb)
+                    } else {
+                        setRgbColor(i, w)
+                    }
+                    outputImage.setRGB(x, y, outputColor.rgb)
+                }
+            }
+        }
+        ImageIO.write(outputImage, "png", File(TemporaryImages.outPutImageName))
+        println("The watermarked image ${TemporaryImages.outPutImageName} has been created.")
+    }
+
+    private fun setRgbColor(i: Color, w: Color): Color {
+        return Color(
+            (TemporaryImages.waterMarkTransparency * w.red + (100 - TemporaryImages.waterMarkTransparency) * i.red) / 100,
+            (TemporaryImages.waterMarkTransparency * w.green + (100 - TemporaryImages.waterMarkTransparency) * i.green) / 100,
+            (TemporaryImages.waterMarkTransparency * w.blue + (100 - TemporaryImages.waterMarkTransparency) * i.blue) / 100,
+        )
+    }
+}
